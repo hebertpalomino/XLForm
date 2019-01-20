@@ -66,6 +66,7 @@ CGFloat XLFormRowInitialHeight = -2;
 @synthesize action = _action;
 @synthesize disabled = _disabled;
 @synthesize hidden = _hidden;
+@synthesize visible = _visible;
 @synthesize hidePredicateCache = _hidePredicateCache;
 @synthesize disablePredicateCache = _disablePredicateCache;
 @synthesize cellConfig = _cellConfig;
@@ -87,6 +88,7 @@ CGFloat XLFormRowInitialHeight = -2;
         _tag = tag;
         _disabled = @NO;
         _hidden = @NO;
+        _visible = @YES;
         _rowType = rowType;
         _title = title;
         _cellStyle = [rowType isEqualToString:XLFormRowDescriptorTypeButton] ? UITableViewCellStyleDefault : UITableViewCellStyleValue1;
@@ -272,6 +274,7 @@ CGFloat XLFormRowInitialHeight = -2;
     [rowDescriptorCopy.cellConfigAtConfigure addEntriesFromDictionary:self.cellConfigAtConfigure];
     rowDescriptorCopy.valueTransformer = [self.valueTransformer copy];
     rowDescriptorCopy->_hidden = _hidden;
+    rowDescriptorCopy->_visible = _visible;
     rowDescriptorCopy->_disabled = _disabled;
     rowDescriptorCopy.required = self.isRequired;
     rowDescriptorCopy.isDirtyDisablePredicateCache = YES;
@@ -425,6 +428,43 @@ CGFloat XLFormRowInitialHeight = -2;
 {
     if (self.isDirtyHidePredicateCache) {
         return [self evaluateIsHidden];
+    }
+    return [self.hidePredicateCache boolValue];
+}
+
+-(BOOL)isVisible {
+    if (self.isDirtyHidePredicateCache) {
+        return [self evaluateIsVisible];
+    }
+    return [self.hidePredicateCache boolValue];
+}
+
+-(BOOL)evaluateIsVisible
+{
+    if ([_hidden isKindOfClass:[NSPredicate class]]) {
+        if (!self.sectionDescriptor.formDescriptor) {
+            self.isDirtyHidePredicateCache = YES;
+        } else {
+            @try {
+                self.hidePredicateCache = @([_hidden evaluateWithObject:self substitutionVariables:self.sectionDescriptor.formDescriptor.allRowsByTag ?: @{}]);
+                self.hidePredicateCache = @(![self.hidePredicateCache boolValue]);
+                
+            }
+            @catch (NSException *exception) {
+                // predicate syntax error or for has not finished loading.
+                self.isDirtyHidePredicateCache = YES;
+            };
+        }
+    }
+    else{
+        self.hidePredicateCache = _hidden;
+    }
+    if ([self.hidePredicateCache boolValue]){
+        [self.cell resignFirstResponder];
+        [self.sectionDescriptor hideFormRow:self];
+    }
+    else{
+        [self.sectionDescriptor showFormRow:self];
     }
     return [self.hidePredicateCache boolValue];
 }

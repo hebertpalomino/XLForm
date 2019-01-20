@@ -75,6 +75,8 @@ typedef void(^XLOnChangeBlock)(id __nullable oldValue,id __nullable newValue,XLF
 -(BOOL)isDisabled;
 @property (nonnull) id hidden;
 -(BOOL)isHidden;
+@property (nonnull) id visible;
+-(BOOL)isVisible;
 @property (getter=isRequired) BOOL required;
 
 @property (nonnull) XLFormAction * action;

@@ -88,7 +88,7 @@ CGFloat XLFormRowInitialHeight = -2;
         _tag = tag;
         _disabled = @NO;
         _hidden = @NO;
-        _visible = @YES;
+        _visible = @NO;
         _rowType = rowType;
         _title = title;
         _cellStyle = [rowType isEqualToString:XLFormRowDescriptorTypeButton] ? UITableViewCellStyleDefault : UITableViewCellStyleValue1;
@@ -303,6 +303,7 @@ CGFloat XLFormRowInitialHeight = -2;
 {
     [self.sectionDescriptor.formDescriptor removeObserversOfObject:self predicateType:XLPredicateTypeDisabled];
     [self.sectionDescriptor.formDescriptor removeObserversOfObject:self predicateType:XLPredicateTypeHidden];
+    [self.sectionDescriptor.formDescriptor removeObserversOfObject:self predicateType:XLPredicateTypeVisible];
     @try {
         [self removeObserver:self forKeyPath:@"value"];
     }
@@ -333,7 +334,7 @@ CGFloat XLFormRowInitialHeight = -2;
                 }
             }
             else{
-                [self.sectionDescriptor.formDescriptor.delegate formRowDescriptorPredicateHasChanged:object oldValue:oldValue newValue:newValue predicateType:([keyPath isEqualToString:@"hidePredicateCache"] ? XLPredicateTypeHidden : XLPredicateTypeDisabled)];
+                [self.sectionDescriptor.formDescriptor.delegate formRowDescriptorPredicateHasChanged:object oldValue:oldValue newValue:newValue predicateType:([keyPath isEqualToString:@"hidePredicateCache"] ? XLPredicateTypeVisible : XLPredicateTypeDisabled)];
             }
         }
     }
@@ -441,13 +442,12 @@ CGFloat XLFormRowInitialHeight = -2;
 
 -(BOOL)evaluateIsVisible
 {
-    if ([_hidden isKindOfClass:[NSPredicate class]]) {
+    if ([_visible isKindOfClass:[NSPredicate class]]) {
         if (!self.sectionDescriptor.formDescriptor) {
             self.isDirtyHidePredicateCache = YES;
         } else {
             @try {
-                self.hidePredicateCache = @([_hidden evaluateWithObject:self substitutionVariables:self.sectionDescriptor.formDescriptor.allRowsByTag ?: @{}]);
-                self.hidePredicateCache = @(![self.hidePredicateCache boolValue]);
+                self.hidePredicateCache = @([_visible evaluateWithObject:self substitutionVariables:self.sectionDescriptor.formDescriptor.allRowsByTag ?: @{}]);
                 
             }
             @catch (NSException *exception) {
@@ -457,7 +457,7 @@ CGFloat XLFormRowInitialHeight = -2;
         }
     }
     else{
-        self.hidePredicateCache = _hidden;
+        self.hidePredicateCache = _visible;
     }
     if ([self.hidePredicateCache boolValue]){
         [self.cell resignFirstResponder];
@@ -466,7 +466,7 @@ CGFloat XLFormRowInitialHeight = -2;
     else{
         [self.sectionDescriptor showFormRow:self];
     }
-    return [self.hidePredicateCache boolValue];
+    return ![self.hidePredicateCache boolValue];
 }
 
 -(BOOL)evaluateIsHidden
@@ -513,6 +513,23 @@ CGFloat XLFormRowInitialHeight = -2;
 -(id)hidden
 {
     return _hidden;
+}
+
+-(void)setVisible:(id)visible
+{
+    if ([_visible isKindOfClass:[NSPredicate class]]){
+        [self.sectionDescriptor.formDescriptor removeObserversOfObject:self predicateType:XLPredicateTypeVisible];
+    }
+    _visible = [visible isKindOfClass:[NSString class]] ? [visible formPredicate] : visible;
+    if ([_visible isKindOfClass:[NSPredicate class]]){
+        [self.sectionDescriptor.formDescriptor addObserversOfObject:self predicateType:XLPredicateTypeVisible];
+    }
+    [self evaluateIsVisible]; // check and update if this row should be hidden.
+}
+
+-(id)visible
+{
+    return _visible;
 }
 
 

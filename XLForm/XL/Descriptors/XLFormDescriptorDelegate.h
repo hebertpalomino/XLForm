@@ -30,7 +30,8 @@
 
 typedef NS_ENUM(NSUInteger, XLPredicateType) {
     XLPredicateTypeDisabled = 0,
-    XLPredicateTypeHidden
+    XLPredicateTypeHidden,
+    XLPredicateTypeVisible
 };
 
 

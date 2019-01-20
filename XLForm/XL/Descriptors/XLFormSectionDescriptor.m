@@ -56,6 +56,7 @@
 @implementation XLFormSectionDescriptor
 
 @synthesize hidden = _hidden;
+@synthesize visible = _visible;
 @synthesize hidePredicateCache = _hidePredicateCache;
 
 -(instancetype)init
@@ -69,6 +70,7 @@
         _title = nil;
         _footerTitle = nil;
         _hidden = @NO;
+        _visible = @NO;
         _hidePredicateCache = @NO;
         _isDirtyHidePredicateCache = YES;
         [self addObserver:self forKeyPath:@"formRows" options:(NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld) context:0];
@@ -200,6 +202,7 @@
 -(void)dealloc
 {
     [self.formDescriptor removeObserversOfObject:self predicateType:XLPredicateTypeHidden];
+    [self.formDescriptor removeObserversOfObject:self predicateType:XLPredicateTypeVisible];
     @try {
         [self removeObserver:self forKeyPath:@"formRows"];
     }
@@ -314,6 +317,7 @@
     [self.allRows insertObject:row atIndex:index];
     row.disabled = row.disabled;
     row.hidden = row.hidden;
+    row.visible = row.visible;
 }
 
 - (void)removeObjectFromAllRowsAtIndex:(NSUInteger)index
@@ -322,6 +326,7 @@
     [self.formDescriptor removeRowFromTagCollection:row];
     [self.formDescriptor removeObserversOfObject:row predicateType:XLPredicateTypeDisabled];
     [self.formDescriptor removeObserversOfObject:row predicateType:XLPredicateTypeHidden];
+    [self.formDescriptor removeObserversOfObject:row predicateType:XLPredicateTypeVisible];
     [self.allRows removeObjectAtIndex:index];
 }
 
@@ -353,6 +358,46 @@
 {
     if (self.isDirtyHidePredicateCache) {
         return [self evaluateIsHidden];
+    }
+    return [self.hidePredicateCache boolValue];
+}
+
+-(BOOL)isVisible {
+    if (self.isDirtyHidePredicateCache) {
+        return [self evaluateIsVisible];
+    }
+    return [self.hidePredicateCache boolValue];
+}
+
+-(BOOL)evaluateIsVisible
+{
+    if ([_visible isKindOfClass:[NSPredicate class]]) {
+        if (!self.formDescriptor) {
+            self.isDirtyHidePredicateCache = YES;
+        } else {
+            @try {
+                self.hidePredicateCache = @([_visible evaluateWithObject:self substitutionVariables:self.formDescriptor.allRowsByTag ?: @{}]);
+            }
+            @catch (NSException *exception) {
+                // predicate syntax error.
+                self.isDirtyHidePredicateCache = YES;
+            };
+        }
+    }
+    else{
+        self.hidePredicateCache = _visible;
+    }
+    if ([self.hidePredicateCache boolValue]){
+        if ([self.formDescriptor.delegate isKindOfClass:[XLFormViewController class]]){
+            XLFormBaseCell* firtResponder = (XLFormBaseCell*) [((XLFormViewController*)self.formDescriptor.delegate).tableView findFirstResponder];
+            if ([firtResponder isKindOfClass:[XLFormBaseCell class]] && firtResponder.rowDescriptor.sectionDescriptor == self){
+                [firtResponder resignFirstResponder];
+            }
+        }
+        [self.formDescriptor showFormSection:self];
+    }
+    else{
+        [self.formDescriptor hideFormSection:self];
     }
     return [self.hidePredicateCache boolValue];
 }
@@ -396,6 +441,11 @@
     return _hidden;
 }
 
+-(id)visible
+{
+    return _visible;
+}
+
 -(void)setHidden:(id)hidden
 {
     if ([_hidden isKindOfClass:[NSPredicate class]]){
@@ -406,6 +456,18 @@
         [self.formDescriptor addObserversOfObject:self predicateType:XLPredicateTypeHidden];
     }
     [self evaluateIsHidden]; // check and update if this row should be hidden.
+}
+
+-(void)setVisible:(id)visible
+{
+    if ([_visible isKindOfClass:[NSPredicate class]]){
+        [self.formDescriptor removeObserversOfObject:self predicateType:XLPredicateTypeVisible];
+    }
+    _visible = [visible isKindOfClass:[NSString class]] ? [visible formPredicate] : visible;
+    if ([_visible isKindOfClass:[NSPredicate class]]){
+        [self.formDescriptor addObserversOfObject:self predicateType:XLPredicateTypeVisible];
+    }
+    [self evaluateIsVisible]; // check and update if this row should be hidden.
 }
 
 @end

@@ -56,6 +56,8 @@ typedef NS_ENUM(NSUInteger, XLFormSectionInsertMode) {
 
 @property (nonnull) id hidden;
 -(BOOL)isHidden;
+@property (nonnull) id visible;
+-(BOOL)isVisible;
 
 +(nonnull instancetype)formSection;
 +(nonnull instancetype)formSectionWithTitle:(nullable NSString *)title;

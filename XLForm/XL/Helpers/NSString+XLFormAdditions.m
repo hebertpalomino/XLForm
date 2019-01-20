@@ -47,7 +47,7 @@
         }
         [new_string appendString:tag];
         range = [tokens[i] rangeOfString:[NSString stringWithFormat:@"%@", tag]];
-        if (!attribute || (![attribute isEqualToString:@"value"] && ![attribute isEqualToString:@"isHidden"] && ![attribute isEqualToString:@"isDisabled"])){
+        if (!attribute || (![attribute isEqualToString:@"value"] && ![attribute isEqualToString:@"isVisible"] && ![attribute isEqualToString:@"isDisabled"])){
             [new_string appendString:@".value"];
         }
         [new_string appendString:[tokens[i] substringFromIndex:range.location + range.length]];
@@ -59,7 +59,7 @@
 
 -(NSString *)formKeyForPredicateType:(XLPredicateType)predicateType
 {
-    return [NSString stringWithFormat:@"%@-%@", self, (predicateType == XLPredicateTypeHidden ? @"hidden" : @"disabled") ];
+    return [NSString stringWithFormat:@"%@-%@", self, (predicateType == XLPredicateTypeVisible ? @"visible" : @"disabled") ];
 }
 
 @end

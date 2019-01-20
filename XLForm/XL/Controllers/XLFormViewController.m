@@ -36,12 +36,14 @@
 @property (readonly) NSArray * observers;
 -(BOOL)evaluateIsDisabled;
 -(BOOL)evaluateIsHidden;
+-(BOOL)evaluateIsVisible;
 
 @end
 
 @interface XLFormSectionDescriptor(_XLFormViewController)
 
 -(BOOL)evaluateIsHidden;
+-(BOOL)evaluateIsVisible;
 
 @end
 
@@ -315,6 +317,7 @@
 -(void)updateAfterDependentRowChanged:(XLFormRowDescriptor *)formRow
 {
     NSMutableArray* revaluateHidden   = self.form.rowObservers[[formRow.tag formKeyForPredicateType:XLPredicateTypeHidden]];
+    NSMutableArray* revaluateVisible   = self.form.rowObservers[[formRow.tag formKeyForPredicateType:XLPredicateTypeVisible]];
     NSMutableArray* revaluateDisabled = self.form.rowObservers[[formRow.tag formKeyForPredicateType:XLPredicateTypeDisabled]];
     for (id object in revaluateDisabled) {
         if ([object isKindOfClass:[NSString class]]) {
@@ -325,16 +328,16 @@
             }
         }
     }
-    for (id object in revaluateHidden) {
+    for (id object in revaluateVisible) {
         if ([object isKindOfClass:[NSString class]]) {
             XLFormRowDescriptor* row = [self.form formRowWithTag:object];
             if (row){
-                [row evaluateIsHidden];
+                [row evaluateIsVisible];
             }
         }
         else if ([object isKindOfClass:[XLFormSectionDescriptor class]]) {
             XLFormSectionDescriptor* section = (XLFormSectionDescriptor*) object;
-            [section evaluateIsHidden];
+            [section evaluateIsVisible];
         }
     }
 }

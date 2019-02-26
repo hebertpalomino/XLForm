@@ -372,16 +372,17 @@
 -(BOOL)evaluateIsVisible
 {
     if ([_visible isKindOfClass:[NSPredicate class]]) {
+        @try {
+            self.hidePredicateCache = @([_visible evaluateWithObject:self substitutionVariables:self.formDescriptor.allRowsByTag ?: @{}]);
+        }
+        @catch (NSException *exception) {
+            // predicate syntax error.
+            self.isDirtyHidePredicateCache = YES;
+        };
         if (!self.formDescriptor) {
             self.isDirtyHidePredicateCache = YES;
         } else {
-            @try {
-                self.hidePredicateCache = @([_visible evaluateWithObject:self substitutionVariables:self.formDescriptor.allRowsByTag ?: @{}]);
-            }
-            @catch (NSException *exception) {
-                // predicate syntax error.
-                self.isDirtyHidePredicateCache = YES;
-            };
+            
         }
     }
     else{

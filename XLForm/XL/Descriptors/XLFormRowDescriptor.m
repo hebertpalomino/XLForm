@@ -443,6 +443,14 @@ CGFloat XLFormRowInitialHeight = -2;
 -(BOOL)evaluateIsVisible
 {
     if ([_visible isKindOfClass:[NSPredicate class]]) {
+        @try {
+            self.hidePredicateCache = @([_visible evaluateWithObject:self substitutionVariables:self.sectionDescriptor.formDescriptor.allRowsByTag ?: @{}]);
+            
+        }
+        @catch (NSException *exception) {
+            // predicate syntax error or for has not finished loading.
+            self.isDirtyHidePredicateCache = YES;
+        };
         if (!self.sectionDescriptor.formDescriptor) {
             self.isDirtyHidePredicateCache = YES;
         } else {
@@ -461,12 +469,12 @@ CGFloat XLFormRowInitialHeight = -2;
     }
     if ([self.hidePredicateCache boolValue]){
         [self.cell resignFirstResponder];
-        [self.sectionDescriptor hideFormRow:self];
-    }
-    else{
         [self.sectionDescriptor showFormRow:self];
     }
-    return ![self.hidePredicateCache boolValue];
+    else{
+        [self.sectionDescriptor hideFormRow:self];
+    }
+    return [self.hidePredicateCache boolValue];
 }
 
 -(BOOL)evaluateIsHidden
